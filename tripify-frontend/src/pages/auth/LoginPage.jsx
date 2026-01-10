@@ -89,7 +89,7 @@ function LoginPage() {
         <div className="mt-4 space-y-2 text-center text-sm">
           <p className="text-muted-foreground">Demo credentials:</p>
           <p className="font-medium">Admin: admin@travel.com / admin123</p>
-          <p className="font-medium">Customer: john@travel.com / password123</p>
+          <p className="font-medium">Customer: ishan@travel.com / password123</p>
         </div>
 
         <div className="mt-4 text-center text-sm">
