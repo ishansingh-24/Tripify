@@ -15,14 +15,10 @@ Base URL: `http://localhost:5000`
 ## Required Env
 
 - `PORT` (default: `5000`)
-- `FRONTEND_ORIGIN` (default: `http://localhost:3000`)
+- `FRONTEND_ORIGIN` (comma-separated origins, e.g. `http://localhost:3000,http://localhost:3001`)
 - `JWT_SECRET`
 - `MONGODB_URI` (example: `mongodb://127.0.0.1:27017/tripify`)
-
-## Demo Accounts (seeded once)
-
-- Admin: `admin@travel.com` / `admin123`
-- Customer: `john@travel.com` / `password123`
+- `BCRYPT_SALT_ROUNDS` (default: `10`)
 
 ## Endpoints
 

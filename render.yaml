@@ -18,6 +18,8 @@ services:
         generateValue: true
       - key: MONGODB_URI
         sync: false
+      - key: BCRYPT_SALT_ROUNDS
+        value: 10
 
   - type: static
     name: tripify-frontend
