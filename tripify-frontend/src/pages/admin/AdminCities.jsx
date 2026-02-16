@@ -1,9 +1,9 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import Navbar from "../../components/Navbar"
-import { mockCities } from "../../data/mockData"
 import { Trash2, Edit2, Plus } from "lucide-react"
+import { api } from "../../lib/api"
 
 function AdminCities() {
   const [cities, setCities] = useState([])
@@ -11,35 +11,44 @@ function AdminCities() {
   const [formData, setFormData] = useState({})
   const [showForm, setShowForm] = useState(false)
 
+  const loadCities = async () => {
+    const data = await api.cities.list()
+    setCities(data)
+  }
+
   useEffect(() => {
-    const storedCities = JSON.parse(localStorage.getItem("cities") || "[]")
-    setCities(storedCities.length > 0 ? storedCities : mockCities)
+    loadCities()
   }, [])
 
-  const handleAdd = () => {
-    const newCity = {
-      id: String(Date.now()),
-      ...formData,
+  const handleAdd = async () => {
+    try {
+      const newCity = await api.cities.create(formData)
+      setCities((prev) => [...prev, newCity])
+      setFormData({})
+      setShowForm(false)
+    } catch (err) {
+      alert(err.message)
     }
-    const updated = [...cities, newCity]
-    setCities(updated)
-    localStorage.setItem("cities", JSON.stringify(updated))
-    setFormData({})
-    setShowForm(false)
   }
 
-  const handleUpdate = () => {
-    const updated = cities.map((c) => (c.id === editingId ? { ...c, ...formData } : c))
-    setCities(updated)
-    localStorage.setItem("cities", JSON.stringify(updated))
-    setEditingId(null)
-    setFormData({})
+  const handleUpdate = async () => {
+    try {
+      const updatedCity = await api.cities.update(editingId, formData)
+      setCities((prev) => prev.map((c) => (c.id === editingId ? updatedCity : c)))
+      setEditingId(null)
+      setFormData({})
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
-  const handleDelete = (id) => {
-    const updated = cities.filter((c) => c.id !== id)
-    setCities(updated)
-    localStorage.setItem("cities", JSON.stringify(updated))
+  const handleDelete = async (id) => {
+    try {
+      await api.cities.remove(id)
+      setCities((prev) => prev.filter((c) => c.id !== id))
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
   const handleEdit = (city) => {
@@ -96,6 +105,13 @@ function AdminCities() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-20"
               />
+              <input
+                type="text"
+                placeholder="Image path (optional)"
+                value={formData.image || ""}
+                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
               <div className="flex gap-2">
                 <button
                   onClick={editingId ? handleUpdate : handleAdd}
@@ -127,10 +143,7 @@ function AdminCities() {
                 <p className="text-sm mt-2">{city.description}</p>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(city)}
-                  className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                >
+                <button onClick={() => handleEdit(city)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
                   <Edit2 className="h-4 w-4" />
                 </button>
                 <button

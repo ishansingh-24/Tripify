@@ -1,60 +1,68 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import Navbar from "../../components/Navbar"
-import { mockPackages, mockTrips } from "../../data/mockData"
 import { Trash2, Edit2, Plus } from "lucide-react"
+import { api } from "../../lib/api"
 
 function AdminPackages() {
   const [packages, setPackages] = useState([])
+  const [trips, setTrips] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState({})
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    const storedPackages = JSON.parse(localStorage.getItem("packages") || "[]")
-    setPackages(storedPackages.length > 0 ? storedPackages : mockPackages)
+    const load = async () => {
+      const [packageData, tripData] = await Promise.all([api.packages.list(), api.trips.list()])
+      setPackages(packageData)
+      setTrips(tripData)
+    }
+
+    load()
   }, [])
 
-  const handleAdd = () => {
-    const newPackage = {
-      id: String(Date.now()),
-      ...formData,
-      price: Number.parseInt(formData.price),
-      maxPeople: Number.parseInt(formData.maxPeople),
-      includedServices: formData.includedServices?.split(",").map((s) => s.trim()) || [],
-      places: formData.places?.split(",").map((p) => p.trim()) || [],
+  const handleAdd = async () => {
+    try {
+      const created = await api.packages.create({
+        ...formData,
+        price: Number.parseInt(formData.price),
+        maxPeople: Number.parseInt(formData.maxPeople),
+        includedServices: formData.includedServices?.split(",").map((s) => s.trim()) || [],
+        places: formData.places?.split(",").map((p) => p.trim()) || [],
+      })
+      setPackages((prev) => [...prev, created])
+      setFormData({})
+      setShowForm(false)
+    } catch (err) {
+      alert(err.message)
     }
-    const updated = [...packages, newPackage]
-    setPackages(updated)
-    localStorage.setItem("packages", JSON.stringify(updated))
-    setFormData({})
-    setShowForm(false)
   }
 
-  const handleUpdate = () => {
-    const updated = packages.map((p) =>
-      p.id === editingId
-        ? {
-            ...p,
-            ...formData,
-            price: Number.parseInt(formData.price),
-            maxPeople: Number.parseInt(formData.maxPeople),
-            includedServices: formData.includedServices?.split(",").map((s) => s.trim()) || [],
-            places: formData.places?.split(",").map((p) => p.trim()) || [],
-          }
-        : p,
-    )
-    setPackages(updated)
-    localStorage.setItem("packages", JSON.stringify(updated))
-    setEditingId(null)
-    setFormData({})
+  const handleUpdate = async () => {
+    try {
+      const updated = await api.packages.update(editingId, {
+        ...formData,
+        price: Number.parseInt(formData.price),
+        maxPeople: Number.parseInt(formData.maxPeople),
+        includedServices: formData.includedServices?.split(",").map((s) => s.trim()) || [],
+        places: formData.places?.split(",").map((p) => p.trim()) || [],
+      })
+      setPackages((prev) => prev.map((p) => (p.id === editingId ? updated : p)))
+      setEditingId(null)
+      setFormData({})
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
-  const handleDelete = (id) => {
-    const updated = packages.filter((p) => p.id !== id)
-    setPackages(updated)
-    localStorage.setItem("packages", JSON.stringify(updated))
+  const handleDelete = async (id) => {
+    try {
+      await api.packages.remove(id)
+      setPackages((prev) => prev.filter((p) => p.id !== id))
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
   const handleEdit = (pkg) => {
@@ -101,7 +109,7 @@ function AdminPackages() {
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select Trip</option>
-                {mockTrips.map((trip) => (
+                {trips.map((trip) => (
                   <option key={trip.id} value={trip.id}>
                     {trip.title}
                   </option>

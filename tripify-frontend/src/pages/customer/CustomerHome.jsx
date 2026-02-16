@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/Navbar"
-import { mockCities } from "../../data/mockData"
+import { api } from "../../lib/api"
 
 function CustomerHome() {
   const navigate = useNavigate()
@@ -9,11 +9,16 @@ function CustomerHome() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCities(mockCities)
-      setLoading(false)
-    }, 500)
+    const load = async () => {
+      try {
+        const result = await api.cities.list()
+        setCities(result)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
   }, [])
 
   const navLinks = [
@@ -50,11 +55,7 @@ function CustomerHome() {
                 onClick={() => navigate(`/customer/trips/${city.id}`)}
               >
                 <div className="h-48 bg-muted">
-                  <img
-    src={city.image}
-    alt={city.name}
-    className="h-48 w-full object-cover"
-  />
+                  <img src={city.image} alt={city.name} className="h-48 w-full object-cover" />
                 </div>
                 <div className="p-4">
                   <h2 className="text-lg font-bold">{city.name}</h2>

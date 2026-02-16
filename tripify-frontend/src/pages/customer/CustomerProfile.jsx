@@ -1,7 +1,7 @@
-
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import Navbar from "../../components/Navbar"
 import { User } from "lucide-react"
+import { api } from "../../lib/api"
 
 function CustomerProfile() {
   const [user, setUser] = useState(null)
@@ -9,18 +9,35 @@ function CustomerProfile() {
   const [formData, setFormData] = useState({})
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (currentUser) {
-      const userData = JSON.parse(currentUser)
-      setUser(userData)
-      setFormData(userData)
+    const load = async () => {
+      try {
+        const response = await api.auth.me()
+        setUser(response.user)
+        setFormData(response.user)
+        localStorage.setItem("currentUser", JSON.stringify(response.user))
+      } catch {
+        const currentUser = localStorage.getItem("currentUser")
+        if (currentUser) {
+          const userData = JSON.parse(currentUser)
+          setUser(userData)
+          setFormData(userData)
+        }
+      }
     }
+
+    load()
   }, [])
 
-  const handleSave = () => {
-    localStorage.setItem("currentUser", JSON.stringify(formData))
-    setUser(formData)
-    setEditMode(false)
+  const handleSave = async () => {
+    try {
+      const response = await api.users.updateMe({ name: formData.name, email: formData.email })
+      setUser(response.user)
+      setFormData(response.user)
+      localStorage.setItem("currentUser", JSON.stringify(response.user))
+      setEditMode(false)
+    } catch (err) {
+      alert(err.message || "Could not update profile")
+    }
   }
 
   const navLinks = [

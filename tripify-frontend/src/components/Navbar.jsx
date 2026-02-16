@@ -1,13 +1,9 @@
-
-
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-// import { useTheme } from "../context/ThemeContext"
-import { Menu, X, Sun, Moon , LogOut} from "lucide-react"
+import { Menu, X } from "lucide-react"
 
 function Navbar({ links = [] }) {
   const navigate = useNavigate()
-  // const { theme, toggleTheme } = useTheme()
   const [user, setUser] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -20,6 +16,7 @@ function Navbar({ links = [] }) {
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser")
+    localStorage.removeItem("authToken")
     navigate("/auth/login")
   }
 
@@ -40,13 +37,6 @@ function Navbar({ links = [] }) {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* <button
-            // onClick={toggleTheme}
-            className="inline-flex items-center justify-center rounded-lg p-2 hover:bg-secondary"
-          >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button> */}
-
           {user ? (
             <>
               <span className="hidden text-sm font-medium sm:inline">{user.name}</span>
@@ -76,7 +66,7 @@ function Navbar({ links = [] }) {
             {user && (
               <button
                 onClick={handleLogout}
-                className="w-full px-3 py-2 text-sm font-medium border border-border  rounded-lg hover:bg-secondary transition-colors bg-primary"
+                className="w-full px-3 py-2 text-sm font-medium border border-border rounded-lg hover:bg-secondary transition-colors bg-primary"
               >
                 Logout
               </button>

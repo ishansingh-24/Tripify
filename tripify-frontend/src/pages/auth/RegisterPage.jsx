@@ -1,8 +1,8 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { mockUsers } from "../../data/mockData"
+import { api } from "../../lib/api"
 
 function RegisterPage() {
   const [name, setName] = useState("")
@@ -27,33 +27,17 @@ function RegisterPage() {
       return
     }
 
-    const existingUser = mockUsers.find((u) => u.email === email)
-    if (existingUser) {
-      setError("Email already exists")
-      return
-    }
-
     setLoading(true)
 
-    const newUser = {
-      id: String(mockUsers.length + 1),
-      name,
-      email,
-      password,
-      role: "customer",
+    try {
+      const { token, user } = await api.auth.register({ name, email, password })
+      localStorage.setItem("authToken", token)
+      localStorage.setItem("currentUser", JSON.stringify(user))
+      navigate("/customer/home")
+    } catch (err) {
+      setError(err.message || "Registration failed")
+      setLoading(false)
     }
-
-    localStorage.setItem(
-      "currentUser",
-      JSON.stringify({
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-      }),
-    )
-
-    navigate("/customer/home")
   }
 
   return (

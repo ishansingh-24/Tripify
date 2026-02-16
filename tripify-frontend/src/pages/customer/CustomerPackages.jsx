@@ -1,10 +1,8 @@
-
-
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import Navbar from "../../components/Navbar"
-import { mockPackages, mockTrips } from "../../data/mockData"
 import { ArrowLeft, Users, Clock } from "lucide-react"
+import { api } from "../../lib/api"
 
 function CustomerPackages() {
   const { tripId } = useParams()
@@ -19,38 +17,37 @@ function CustomerPackages() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setTimeout(() => {
-      const foundTrip = mockTrips.find((t) => t.id === tripId)
-      setTrip(foundTrip)
-      const tripPackages = mockPackages.filter((p) => p.tripId === tripId)
-      setPackages(tripPackages)
-      setLoading(false)
-    }, 300)
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [loadedTrip, tripPackages] = await Promise.all([api.trips.get(tripId), api.packages.list(tripId)])
+        setTrip(loadedTrip)
+        setPackages(tripPackages)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
   }, [tripId])
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!selectedPackage || !bookingData.date) {
       alert("Please select a package and date")
       return
     }
 
-    const newBooking = {
-      id: String(Date.now()),
-      userId: JSON.parse(localStorage.getItem("currentUser")).id,
-      packageId: selectedPackage.id,
-      tripId: selectedPackage.tripId,
-      date: bookingData.date,
-      numberOfPeople: bookingData.numberOfPeople,
-      totalPrice: selectedPackage.price * bookingData.numberOfPeople,
-      status: "pending",
+    try {
+      await api.bookings.create({
+        packageId: selectedPackage.id,
+        date: bookingData.date,
+        numberOfPeople: bookingData.numberOfPeople,
+      })
+      alert("Booking confirmed!")
+      navigate("/customer/dashboard")
+    } catch (err) {
+      alert(err.message || "Booking failed")
     }
-
-    const bookings = JSON.parse(localStorage.getItem("bookings") || "[]")
-    bookings.push(newBooking)
-    localStorage.setItem("bookings", JSON.stringify(bookings))
-
-    alert("Booking confirmed!")
-    navigate("/customer/dashboard")
   }
 
   const navLinks = [
@@ -84,9 +81,7 @@ function CustomerPackages() {
                   <div
                     key={pkg.id}
                     className={`rounded-lg border-2 p-6 cursor-pointer transition-all ${
-                      selectedPackage?.id === pkg.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary"
+                      selectedPackage?.id === pkg.id ? "border-primary bg-primary/5" : "border-border hover:border-primary"
                     }`}
                     onClick={() => setSelectedPackage(pkg)}
                   >
@@ -135,7 +130,7 @@ function CustomerPackages() {
                         max={selectedPackage.maxPeople}
                         value={bookingData.numberOfPeople}
                         onChange={(e) =>
-                          setBookingData({ ...bookingData, numberOfPeople: Number.parseInt(e.target.value) })
+                          setBookingData({ ...bookingData, numberOfPeople: Number.parseInt(e.target.value) || 1 })
                         }
                         className="w-full mt-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                       />

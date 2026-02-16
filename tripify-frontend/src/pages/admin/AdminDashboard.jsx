@@ -1,9 +1,9 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import Navbar from "../../components/Navbar"
-import { mockBookings, mockCities, mockTrips } from "../../data/mockData"
 import { BookOpen, MapPin, Package, DollarSign } from "lucide-react"
+import { api } from "../../lib/api"
 
 function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -12,14 +12,18 @@ function AdminDashboard() {
     totalCities: 0,
     totalTrips: 0,
   })
+  const [statusCounts, setStatusCounts] = useState({ confirmed: 0, pending: 0, cancelled: 0 })
+  const [recentBookings, setRecentBookings] = useState([])
 
   useEffect(() => {
-    setStats({
-      totalBookings: mockBookings.length,
-      totalRevenue: mockBookings.reduce((sum, b) => sum + (b.status !== "cancelled" ? b.totalPrice : 0), 0),
-      totalCities: mockCities.length,
-      totalTrips: mockTrips.length,
-    })
+    const load = async () => {
+      const data = await api.admin.dashboard()
+      setStats(data.stats)
+      setStatusCounts(data.statusCounts)
+      setRecentBookings(data.recentBookings)
+    }
+
+    load()
   }, [])
 
   const navLinks = [
@@ -61,11 +65,8 @@ function AdminDashboard() {
           <div className="rounded-lg border border-border bg-card p-6">
             <h2 className="text-lg font-bold mb-4">Recent Bookings</h2>
             <div className="space-y-3">
-              {mockBookings.slice(0, 5).map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex items-center justify-between pb-3 border-b border-border last:border-0"
-                >
+              {recentBookings.map((booking) => (
+                <div key={booking.id} className="flex items-center justify-between pb-3 border-b border-border last:border-0">
                   <div>
                     <p className="font-medium">{booking.cityName}</p>
                     <p className="text-xs text-muted-foreground">{booking.packageName}</p>
@@ -80,21 +81,9 @@ function AdminDashboard() {
             <h2 className="text-lg font-bold mb-4">Booking Status</h2>
             <div className="space-y-3">
               {[
-                {
-                  label: "Confirmed",
-                  count: mockBookings.filter((b) => b.status === "confirmed").length,
-                  color: "text-green-600",
-                },
-                {
-                  label: "Pending",
-                  count: mockBookings.filter((b) => b.status === "pending").length,
-                  color: "text-yellow-600",
-                },
-                {
-                  label: "Cancelled",
-                  count: mockBookings.filter((b) => b.status === "cancelled").length,
-                  color: "text-red-600",
-                },
+                { label: "Confirmed", count: statusCounts.confirmed || 0, color: "text-green-600" },
+                { label: "Pending", count: statusCounts.pending || 0, color: "text-yellow-600" },
+                { label: "Cancelled", count: statusCounts.cancelled || 0, color: "text-red-600" },
               ].map((status) => (
                 <div key={status.label} className="flex items-center justify-between">
                   <span className="text-sm font-medium">{status.label}</span>

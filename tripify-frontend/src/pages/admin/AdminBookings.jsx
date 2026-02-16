@@ -1,25 +1,29 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import Navbar from "../../components/Navbar"
-import { mockBookings } from "../../data/mockData"
+import { api } from "../../lib/api"
 
 function AdminBookings() {
   const [bookings, setBookings] = useState([])
   const [selectedStatus, setSelectedStatus] = useState("all")
 
   useEffect(() => {
-    const storedBookings = JSON.parse(localStorage.getItem("bookings") || "[]")
-    const allBookings = storedBookings.length > 0 ? storedBookings : mockBookings
-    setBookings(allBookings)
-  }, [])
+    const load = async () => {
+      const data = await api.bookings.list(selectedStatus === "all" ? undefined : selectedStatus)
+      setBookings(data)
+    }
 
-  const filteredBookings = selectedStatus === "all" ? bookings : bookings.filter((b) => b.status === selectedStatus)
+    load()
+  }, [selectedStatus])
 
-  const handleStatusChange = (bookingId, newStatus) => {
-    const updated = bookings.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
-    setBookings(updated)
-    localStorage.setItem("bookings", JSON.stringify(updated))
+  const handleStatusChange = async (bookingId, newStatus) => {
+    try {
+      const updated = await api.bookings.updateStatus(bookingId, newStatus)
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? updated : b)))
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
   const navLinks = [
@@ -65,7 +69,7 @@ function AdminBookings() {
               </tr>
             </thead>
             <tbody>
-              {filteredBookings.map((booking) => (
+              {bookings.map((booking) => (
                 <tr key={booking.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
                   <td className="px-4 py-3">{booking.cityName}</td>
                   <td className="px-4 py-3">{booking.packageName}</td>
@@ -89,7 +93,7 @@ function AdminBookings() {
           </table>
         </div>
 
-        {filteredBookings.length === 0 && (
+        {bookings.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No bookings found</p>
           </div>

@@ -1,10 +1,8 @@
-
-
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import Navbar from "../../components/Navbar"
-import { mockCities, mockTrips } from "../../data/mockData"
 import { ArrowLeft } from "lucide-react"
+import { api } from "../../lib/api"
 
 function CustomerTrips() {
   const { cityId } = useParams()
@@ -14,13 +12,18 @@ function CustomerTrips() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setTimeout(() => {
-      const foundCity = mockCities.find((c) => c.id === cityId)
-      setCity(foundCity)
-      const cityTrips = mockTrips.filter((t) => t.cityId === cityId)
-      setTrips(cityTrips)
-      setLoading(false)
-    }, 300)
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [loadedCity, loadedTrips] = await Promise.all([api.cities.get(cityId), api.trips.list(cityId)])
+        setCity(loadedCity)
+        setTrips(loadedTrips)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
   }, [cityId])
 
   const navLinks = [

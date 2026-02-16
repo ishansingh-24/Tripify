@@ -1,8 +1,8 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { mockUsers } from "../../data/mockData"
+import { api } from "../../lib/api"
 
 function LoginPage() {
   const [email, setEmail] = useState("")
@@ -16,26 +16,18 @@ function LoginPage() {
     setError("")
     setLoading(true)
 
-    const user = mockUsers.find((u) => u.email === email && u.password === password)
-
-    if (user) {
-      localStorage.setItem(
-        "currentUser",
-        JSON.stringify({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        }),
-      )
+    try {
+      const { token, user } = await api.auth.login({ email, password })
+      localStorage.setItem("authToken", token)
+      localStorage.setItem("currentUser", JSON.stringify(user))
 
       if (user.role === "admin") {
         navigate("/admin/dashboard")
       } else {
         navigate("/customer/home")
       }
-    } else {
-      setError("Invalid email or password")
+    } catch (err) {
+      setError(err.message || "Invalid email or password")
       setLoading(false)
     }
   }
@@ -94,7 +86,7 @@ function LoginPage() {
 
         <div className="mt-4 text-center text-sm">
           <p className="text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link to="/auth/register" className="font-medium text-primary hover:underline">
               Register
             </Link>

@@ -1,25 +1,25 @@
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import Navbar from "../../components/Navbar"
 import StatusBadge from "../../components/StatusBadge"
 import EmptyState from "../../components/EmptyState"
-import { mockBookings } from "../../data/mockData"
 import { Calendar } from "lucide-react"
+import { api } from "../../lib/api"
 
 function CustomerDashboard() {
-  const [user, setUser] = useState(null)
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (currentUser) {
-      const userData = JSON.parse(currentUser)
-      setUser(userData)
-
-      const userBookings = mockBookings.filter((b) => b.userId === userData.id)
-      setBookings(userBookings)
+    const load = async () => {
+      try {
+        const data = await api.bookings.list()
+        setBookings(data)
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
+
+    load()
   }, [])
 
   const navLinks = [
@@ -52,10 +52,7 @@ function CustomerDashboard() {
             ) : upcomingBookings.length > 0 ? (
               <div className="space-y-4">
                 {upcomingBookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-shadow"
-                  >
+                  <div key={booking.id} className="rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-shadow">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="font-bold text-lg">{booking.cityName}</h3>

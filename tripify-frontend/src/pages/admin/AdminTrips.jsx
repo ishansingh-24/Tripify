@@ -1,48 +1,62 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import Navbar from "../../components/Navbar"
-import { mockTrips, mockCities } from "../../data/mockData"
 import { Trash2, Edit2, Plus } from "lucide-react"
+import { api } from "../../lib/api"
 
 function AdminTrips() {
   const [trips, setTrips] = useState([])
+  const [cities, setCities] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState({})
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    const storedTrips = JSON.parse(localStorage.getItem("trips") || "[]")
-    setTrips(storedTrips.length > 0 ? storedTrips : mockTrips)
+    const load = async () => {
+      const [tripData, cityData] = await Promise.all([api.trips.list(), api.cities.list()])
+      setTrips(tripData)
+      setCities(cityData)
+    }
+
+    load()
   }, [])
 
-  const handleAdd = () => {
-    const newTrip = {
-      id: String(Date.now()),
-      ...formData,
-      places: formData.places?.split(",").map((p) => p.trim()) || [],
+  const handleAdd = async () => {
+    try {
+      const created = await api.trips.create({
+        ...formData,
+        places: formData.places?.split(",").map((p) => p.trim()) || [],
+      })
+      setTrips((prev) => [...prev, created])
+      setFormData({})
+      setShowForm(false)
+    } catch (err) {
+      alert(err.message)
     }
-    const updated = [...trips, newTrip]
-    setTrips(updated)
-    localStorage.setItem("trips", JSON.stringify(updated))
-    setFormData({})
-    setShowForm(false)
   }
 
-  const handleUpdate = () => {
-    const updated = trips.map((t) =>
-      t.id === editingId ? { ...t, ...formData, places: formData.places?.split(",").map((p) => p.trim()) || [] } : t,
-    )
-    setTrips(updated)
-    localStorage.setItem("trips", JSON.stringify(updated))
-    setEditingId(null)
-    setFormData({})
+  const handleUpdate = async () => {
+    try {
+      const updated = await api.trips.update(editingId, {
+        ...formData,
+        places: formData.places?.split(",").map((p) => p.trim()) || [],
+      })
+      setTrips((prev) => prev.map((t) => (t.id === editingId ? updated : t)))
+      setEditingId(null)
+      setFormData({})
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
-  const handleDelete = (id) => {
-    const updated = trips.filter((t) => t.id !== id)
-    setTrips(updated)
-    localStorage.setItem("trips", JSON.stringify(updated))
+  const handleDelete = async (id) => {
+    try {
+      await api.trips.remove(id)
+      setTrips((prev) => prev.filter((t) => t.id !== id))
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
   const handleEdit = (trip) => {
@@ -85,7 +99,7 @@ function AdminTrips() {
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select City</option>
-                {mockCities.map((city) => (
+                {cities.map((city) => (
                   <option key={city.id} value={city.id}>
                     {city.name}
                   </option>
@@ -149,10 +163,7 @@ function AdminTrips() {
                 <p className="text-sm mt-2">{trip.description}</p>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(trip)}
-                  className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                >
+                <button onClick={() => handleEdit(trip)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
                   <Edit2 className="h-4 w-4" />
                 </button>
                 <button
